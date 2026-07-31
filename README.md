@@ -58,7 +58,7 @@ Genera `cs2-rayoX.exe` en la raíz.
 
 ## Uso
 
-1. Ejecutar como Administrador (con CS2 abierto).
+1. Ejecutar (con CS2 abierto).
 2. **F1** → X-Ray activado/desactivado.
 
 ## Medidas de discreción
