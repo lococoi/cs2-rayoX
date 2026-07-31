@@ -9,6 +9,10 @@ on:
       - "v*"
   workflow_dispatch:
 
+# Permiso de escritura necesario para publicar la Release y sus assets.
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -49,4 +53,3 @@ jobs:
           files: |
             cs2-rayoX.exe
             cs2-rayoX.zip
-          generate_release_notes: true
