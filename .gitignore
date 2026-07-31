@@ -9,6 +9,14 @@
 *.exe
 *.zip
 
+# Objetos e intermedios de compilación
+*.obj
+*.o
+*.ilk
+*.idb
+*.iobj
+*.ipdb
+
 # Logs
 *.log
 *.pdb
