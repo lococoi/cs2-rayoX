@@ -4,6 +4,7 @@ Herramienta educativa de **escritura de memoria externa** para **Counter-Strike 
 
 <img width="1223" height="732" alt="image" src="https://github.com/user-attachments/assets/6930c485-6545-4ac7-bc64-bf8be0045062" />
 
+
 > [!WARNING]
 > ⚠️ **Esto podría ser perjudicial.** Su uso viola los Términos de Servicio de Valve y puede resultar en **baneo permanente de la cuenta por VAC**. Este proyecto es **exclusivamente con fines educativos** (aprender APIs de Windows como `ReadProcessMemory`, `WriteProcessMemory`, `Toolhelp32`). Usalo bajo tu propia responsabilidad y solo en entornos de práctica/offline.
 
