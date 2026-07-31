@@ -6,7 +6,7 @@ Herramienta educativa de **escritura de memoria externa** para **Counter-Strike 
 
 
 > [!WARNING]
-> ⚠️ **Esto podría ser perjudicial.** Su uso viola los Términos de Servicio de Valve y puede resultar en **baneo permanente de la cuenta por VAC**. Este proyecto es **exclusivamente con fines educativos** (aprender APIs de Windows como `ReadProcessMemory`, `WriteProcessMemory`, `Toolhelp32`). Usalo bajo tu propia responsabilidad y solo en entornos de práctica/offline.
+> ⚠️ **Esto podría ser perjudicial.** Su uso podría violar los Términos de Servicio de Valve y puede resultar en **baneo permanente de la cuenta por VAC**. Este proyecto es **exclusivamente con fines educativos** (aprender APIs de Windows como `ReadProcessMemory`, `WriteProcessMemory`, `Toolhelp32`). Usalo bajo tu propia responsabilidad y solo en entornos de práctica/offline.
 
 ---
 
@@ -55,26 +55,6 @@ build.bat
 ```
 
 Genera `cs2-rayoX.exe` en la raíz.
-
-## CI / Release en GitHub
-
-El repositorio incluye un workflow de **GitHub Actions** (`.github/workflows/build.yml`) que:
-
-1. Compila automáticamente en `windows-latest` con `build.bat` (cl.exe).
-2. Genera `cs2-rayoX.exe` y `cs2-rayoX.zip`.
-3. Los sube como artifact.
-4. **Publica la Release** con el `.exe` y el `.zip` cuando pusheás un tag `vX.Y`.
-
-### Cómo publicar la versión 1.0
-
-```bash
-git tag v1.0
-git push origin v1.0
-```
-
-El workflow publica la Release automáticamente con `cs2-rayoX.exe` y `cs2-rayoX.zip`.
-
-> También podés disparar el build manualmente desde la pestaña **Actions → Build cs2-rayoX → Run workflow** (solo compila y sube artifacts, sin publicar Release).
 
 ## Uso
 
