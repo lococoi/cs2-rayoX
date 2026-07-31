@@ -1,8 +1,8 @@
-# CS2 RayoX
+# cs2-rayoX
 
 Herramienta educativa de **escritura de memoria externa** para **Counter-Strike 2** que activa el **X-Ray** (glow en todos los jugadores a través de las paredes) parcheando una instrucción de `client.dll`.
 
-**lococoi**
+**Créditos: gh lococoi**
 
 > [!WARNING]
 > ⚠️ **Esto es un cheat.** Su uso viola los Términos de Servicio de Valve y puede resultar en **baneo permanente de la cuenta por VAC**. Este proyecto es **exclusivamente con fines educativos** (aprender APIs de Windows como `ReadProcessMemory`, `WriteProcessMemory`, `Toolhelp32`). Usalo bajo tu propia responsabilidad y solo en entornos de práctica/offline.
@@ -53,14 +53,14 @@ La firma se define en [`config.h`](config.h:37):
 build.bat
 ```
 
-Genera `CS2_RayoX.exe` en la raíz.
+Genera `cs2-rayoX.exe` en la raíz.
 
 ## CI / Release en GitHub
 
 El repositorio incluye un workflow de **GitHub Actions** (`.github/workflows/build.yml`) que:
 
 1. Compila automáticamente en `windows-latest` con `build.bat` (cl.exe).
-2. Genera `CS2_RayoX.exe` y `CS2_RayoX.zip`.
+2. Genera `cs2-rayoX.exe` y `cs2-rayoX.zip`.
 3. Los sube como artifact.
 4. **Publica la Release** con el `.exe` y el `.zip` cuando pusheás un tag `vX.Y`.
 
@@ -71,9 +71,9 @@ git tag v1.0
 git push origin v1.0
 ```
 
-El workflow publica la Release automáticamente con `CS2_RayoX.exe` y `CS2_RayoX.zip`.
+El workflow publica la Release automáticamente con `cs2-rayoX.exe` y `cs2-rayoX.zip`.
 
-> También podés disparar el build manualmente desde la pestaña **Actions → Build CS2 RayoX → Run workflow** (solo compila y sube artifacts, sin publicar Release).
+> También podés disparar el build manualmente desde la pestaña **Actions → Build cs2-rayoX → Run workflow** (solo compila y sube artifacts, sin publicar Release).
 
 ## Uso
 
@@ -100,4 +100,4 @@ El workflow publica la Release automáticamente con `CS2_RayoX.exe` y `CS2_RayoX
 
 ---
 
-Valve: arregla tu juego.
+*Proyecto con fines 100% educativos — créditos: gh lococoi.* 🙏

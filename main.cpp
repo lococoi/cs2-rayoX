@@ -11,7 +11,7 @@
 using namespace std;
 
 // ============================================================
-//  CS2 RayoX — X-RAY por parcheo directo de la función.
+//  cs2-rayoX — X-RAY por parcheo directo de la función.
 //  En la dirección del X-Ray hay un "xor al, al" (32 C0).
 //  Escribir "mov al, 1" (B0 01) activa el glow en todos los
 //  jugadores al instante; restaurar "xor al, al" lo apaga.
@@ -79,7 +79,7 @@ int main()
     if (OCULTAR_CONSOLA)
         ShowWindow(GetConsoleWindow(), SW_HIDE);
 
-    cout << "CS2 RayoX — X-Ray para Counter-Strike 2" << endl;
+    cout << "cs2-rayoX — X-Ray para Counter-Strike 2" << endl;
     cout << "hecho por lococoi" << endl;
     cout << "Esperando proceso: " << NOMBRE_DEL_JUEGO << " ..." << endl;
 

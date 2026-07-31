@@ -1,6 +1,6 @@
 @echo off
 rem ============================================================
-rem  CS2 RayoX - build sin Visual Studio
+rem  cs2-rayoX - build sin Visual Studio
 rem  lococoi
 rem ============================================================
 setlocal
@@ -37,11 +37,11 @@ if "%VCVARS%"=="" (
 
 call "%VCVARS%" >nul 2>&1
 
-cl /nologo /O2 /W4 /WX /EHsc /utf-8 main.cpp proceso_externo.cpp gestor_modulos.cpp buscador_firmas.cpp /Fe:CS2_RayoX.exe /link /SUBSYSTEM:CONSOLE user32.lib
+cl /nologo /O2 /W4 /WX /EHsc /utf-8 main.cpp proceso_externo.cpp gestor_modulos.cpp buscador_firmas.cpp /Fe:cs2-rayoX.exe /link /SUBSYSTEM:CONSOLE user32.lib
 if errorlevel 1 (
     echo [ERROR] Compilacion fallida.
     exit /b 1
 )
 
-echo [OK] Generado: CS2_RayoX.exe
+echo [OK] Generado: cs2-rayoX.exe
 endlocal

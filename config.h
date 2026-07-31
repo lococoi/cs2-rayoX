@@ -3,7 +3,7 @@
 #include <Windows.h>
 
 // ============================================================
-//  CS2 RayoX — CONFIGURACIÓN CENTRAL
+//  cs2-rayoX — CONFIGURACIÓN CENTRAL
 //  Todo lo que puede cambiar entre versiones de CS2 o por
 //  preferencia del usuario se edita únicamente aquí.
 //  lococoi

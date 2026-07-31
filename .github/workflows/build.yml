@@ -1,4 +1,4 @@
-name: Build CS2 RayoX
+name: Build cs2-rayoX
 
 # Disparadores:
 #  - push de un tag vX.Y  (ej: v1.0)  → compila y publica Release con exe + zip
@@ -24,22 +24,22 @@ jobs:
       - name: Verificar ejecutable
         shell: pwsh
         run: |
-          if (-not (Test-Path "CS2_RayoX.exe")) {
-            Write-Error "No se genero CS2_RayoX.exe"
+          if (-not (Test-Path "cs2-rayoX.exe")) {
+            Write-Error "No se genero cs2-rayoX.exe"
             exit 1
           }
 
       - name: Crear ZIP del ejecutable
         shell: pwsh
-        run: Compress-Archive -Path "CS2_RayoX.exe" -DestinationPath "CS2_RayoX.zip" -Force
+        run: Compress-Archive -Path "cs2-rayoX.exe" -DestinationPath "cs2-rayoX.zip" -Force
 
       - name: Subir artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: CS2_RayoX
+          name: cs2-rayoX
           path: |
-            CS2_RayoX.exe
-            CS2_RayoX.zip
+            cs2-rayoX.exe
+            cs2-rayoX.zip
           if-no-files-found: error
 
       - name: Publicar Release (solo en tags)
@@ -47,6 +47,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            CS2_RayoX.exe
-            CS2_RayoX.zip
+            cs2-rayoX.exe
+            cs2-rayoX.zip
           generate_release_notes: true
