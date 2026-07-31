@@ -1,0 +1,16 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.VC.db
+*.VC.opendb
+
+# Ejecutables y zips generados
+*.exe
+*.zip
+
+# Logs
+*.log
+*.pdb
+*.ipch
+*.tlog
