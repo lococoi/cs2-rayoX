@@ -1,0 +1,52 @@
+name: Build cs2-rayoX
+
+# Disparadores:
+#  - push de un tag vX.Y  (ej: v1.0)  → compila y publica Release con exe + zip
+#  - workflow_dispatch (botón "Run workflow") → solo compila y sube artifacts
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compilar con build.bat
+        shell: cmd
+        run: build.bat
+
+      - name: Verificar ejecutable
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "cs2-rayoX.exe")) {
+            Write-Error "No se genero cs2-rayoX.exe"
+            exit 1
+          }
+
+      - name: Crear ZIP del ejecutable
+        shell: pwsh
+        run: Compress-Archive -Path "cs2-rayoX.exe" -DestinationPath "cs2-rayoX.zip" -Force
+
+      - name: Subir artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cs2-rayoX
+          path: |
+            cs2-rayoX.exe
+            cs2-rayoX.zip
+          if-no-files-found: error
+
+      - name: Publicar Release (solo en tags)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            cs2-rayoX.exe
+            cs2-rayoX.zip
+          generate_release_notes: true
