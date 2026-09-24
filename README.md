@@ -2,7 +2,7 @@
 
 Herramienta educativa de **escritura de memoria externa** para **Counter-Strike 2** que activa el **X-Ray** (glow en todos los jugadores a través de las paredes) parcheando una instrucción de `client.dll`.
 
-**Créditos: gh lococoi**
+**Créditos: lococoi**
 
 > [!WARNING]
 > ⚠️ **Esto es un cheat.** Su uso viola los Términos de Servicio de Valve y puede resultar en **baneo permanente de la cuenta por VAC**. Este proyecto es **exclusivamente con fines educativos** (aprender APIs de Windows como `ReadProcessMemory`, `WriteProcessMemory`, `Toolhelp32`). Usalo bajo tu propia responsabilidad y solo en entornos de práctica/offline.
@@ -100,4 +100,4 @@ El workflow publica la Release automáticamente con `cs2-rayoX.exe` y `cs2-rayoX
 
 ---
 
-*Proyecto con fines 100% educativos — créditos: gh lococoi.* 🙏
+Valve: arregla tu juego de mierda.
