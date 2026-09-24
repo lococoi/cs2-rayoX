@@ -10,16 +10,17 @@
 // ============================================================
 
 // ---- Proceso y módulo objetivo ----
-constexpr const char* NOMBRE_DEL_JUEGO      = "cs2.exe";
-constexpr DWORD       NIVEL_DE_ACCESO       = PROCESS_ALL_ACCESS;
-constexpr const wchar_t* NOMBRE_DEL_MODULO  = L"client.dll";
+constexpr const char *NOMBRE_DEL_JUEGO = "cs2.exe";
+constexpr DWORD NIVEL_DE_ACCESO = PROCESS_ALL_ACCESS;
+constexpr const wchar_t *NOMBRE_DEL_MODULO = L"client.dll";
 
 // ---- Tecla que activa/desactiva el X-Ray ----
 constexpr int TECLA_ACTIVAR_XRAY = VK_F1;
 
 // ---- Temporización ----
-constexpr DWORD INTERVALO_DEL_LOOP_MS     = 10;    // espera entre iteraciones del loop
-constexpr DWORD INTERVALO_DE_REINTENTO_MS = 1000;  // espera mientras el juego no está
+constexpr DWORD INTERVALO_DEL_LOOP_MS = 10; // espera entre iteraciones del loop
+constexpr DWORD INTERVALO_DE_REINTENTO_MS =
+    1000; // espera mientras el juego no está
 
 // ---- Discreción ----
 // true  = oculta la ventana de consola al iniciar (el proceso sigue activo).
@@ -27,14 +28,14 @@ constexpr DWORD INTERVALO_DE_REINTENTO_MS = 1000;  // espera mientras el juego n
 constexpr bool OCULTAR_CONSOLA = false;
 
 // ============================================================
-//  X-RAY (técnica verificada con Cheat Engine — Build 14173)
+//  X-RAY (técnica verificada con Cheat Engine — Build 14414)
 //  En la dirección del X-Ray hay un "xor al, al" (32 C0).
 //  Escribir "mov al, 1" (B0 01) activa el glow en todos los
 //  jugadores al instante; restaurar "xor al, al" lo apaga.
 // ============================================================
-constexpr uintptr_t DESPLAZAMIENTO_XRAY = 0xC12629; // fallback (Build 14173)
-constexpr unsigned char BYTES_XRAY_APAGADO[]   = { 0x32, 0xC0 }; // xor al, al
-constexpr unsigned char BYTES_XRAY_ENCENDIDO[] = { 0xB0, 0x01 }; // mov al, 1
+constexpr uintptr_t DESPLAZAMIENTO_XRAY = 0xC7C2B9; // fallback (Build 14414)
+constexpr unsigned char BYTES_XRAY_APAGADO[] = {0x32, 0xC0};   // xor al, al
+constexpr unsigned char BYTES_XRAY_ENCENDIDO[] = {0xB0, 0x01}; // mov al, 1
 
 // ============================================================
 //  FIRMA del X-Ray — detección automática en futuros builds
@@ -43,11 +44,10 @@ constexpr unsigned char BYTES_XRAY_ENCENDIDO[] = { 0xB0, 0x01 }; // mov al, 1
 //  El primer byte es comodín (?) porque puede variar entre builds.
 //  El offset del match ES la dirección del X-Ray.
 // ============================================================
-static constexpr char FIRMA_XRAY[] =
-    "\x00\xC0"
-    "\x4C\x8B\xA4\x24\xC8\x00\x00\x00"
-    "\x48\x8B\xB4\x24\xC0\x00\x00\x00"
-    "\x48\x8B\x9C\x24\xD0\x00\x00\x00";
+static constexpr char FIRMA_XRAY[] = "\x00\xC0"
+                                     "\x4C\x8B\xA4\x24\xC8\x00\x00\x00"
+                                     "\x48\x8B\xB4\x24\xC0\x00\x00\x00"
+                                     "\x48\x8B\x9C\x24\xD0\x00\x00\x00";
 
 static constexpr char MASCARA_FIRMA_XRAY[] = "?xxxxxxxxxxxxxxxxxxxxxxxxx";
 
