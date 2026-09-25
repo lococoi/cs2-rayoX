@@ -33,7 +33,7 @@ constexpr bool OCULTAR_CONSOLA = false;
 //  Escribir "mov al, 1" (B0 01) activa el glow en todos los
 //  jugadores al instante; restaurar "xor al, al" lo apaga.
 // ============================================================
-constexpr uintptr_t DESPLAZAMIENTO_XRAY = 0xC7C2B9; // fallback (Build 14414)
+constexpr uintptr_t DESPLAZAMIENTO_XRAY = 0xC7D319; // fallback (Build 14414)
 constexpr unsigned char BYTES_XRAY_APAGADO[] = {0x32, 0xC0};   // xor al, al
 constexpr unsigned char BYTES_XRAY_ENCENDIDO[] = {0xB0, 0x01}; // mov al, 1
 
