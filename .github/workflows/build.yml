@@ -1,10 +1,12 @@
 name: Build cs2-rayoX
 
 # Disparadores:
-#  - push de un tag vX.Y  (ej: v1.0)  → compila y publica Release con exe + zip
-#  - workflow_dispatch (botón "Run workflow") → solo compila y sube artifacts
+#  - push a main (cambios de código) → compila y publica/actualiza la Release "latest"
+#  - push de un tag vX.Y             → compila y publica una Release versionada
+#  - workflow_dispatch               → compila y publica/actualiza la Release "latest"
 on:
   push:
+    branches: [main]
     tags:
       - "v*"
   workflow_dispatch:
@@ -12,6 +14,12 @@ on:
 # Permiso de escritura necesario para publicar la Release y sus assets.
 permissions:
   contents: write
+
+# Serializa los runs de la misma rama/tag para que dos pushes seguidos
+# no suban assets a la misma Release al mismo tiempo.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -46,14 +54,53 @@ jobs:
             cs2-rayoX.zip
           if-no-files-found: error
 
-      # Publica (o actualiza) los assets en la Release del tag actual.
-      # Se usa gh release upload en vez de softprops para evitar la
-      # llamada a generate-release-notes (causa de "Resource not
-      # accessible by integration").
-      - name: Publicar Release (solo en tags)
-        if: startsWith(github.ref, 'refs/tags/v')
+      # Publica una Release en cada cambio de código:
+      #  - tag vX.Y → Release versionada con ese tag.
+      #  - main      → Release rodante "latest" (se actualiza en cada push).
+      # Se usa gh (en vez de softprops) para evitar generate-release-notes,
+      # que provocaba "Resource not accessible by integration".
+      - name: Publicar Release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
-          gh release upload "$GITHUB_REF_NAME" cs2-rayoX.exe cs2-rayoX.zip --clobber
+          set -euo pipefail
+
+          COMMIT_URL="https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}"
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            TAG="${GITHUB_REF_NAME}"
+            TITLE="cs2-rayoX ${TAG}"
+            NOTES="Release ${TAG}. Commit: ${COMMIT_URL}"
+          else
+            TAG="latest"
+            TITLE="cs2-rayoX build ${SHORT_SHA}"
+            NOTES="Build automático de ${SHORT_SHA} (${GITHUB_REF_NAME}). Commit: ${COMMIT_URL}"
+          fi
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" cs2-rayoX.exe cs2-rayoX.zip --clobber
+            gh release edit "$TAG" \
+              --title "$TITLE" \
+              --notes "$NOTES" \
+              --draft=false \
+              --prerelease=false \
+              --latest
+          else
+            if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+              gh release create "$TAG" cs2-rayoX.exe cs2-rayoX.zip \
+                --title "$TITLE" \
+                --notes "$NOTES" \
+                --draft=false \
+                --latest
+            else
+              gh release create "$TAG" cs2-rayoX.exe cs2-rayoX.zip \
+                --title "$TITLE" \
+                --notes "$NOTES" \
+                --draft=false \
+                --prerelease=false \
+                --latest
+            fi
+          fi
