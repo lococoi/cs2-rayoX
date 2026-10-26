@@ -1,5 +1,6 @@
 #include <Windows.h>
 
+#include <cstring>
 #include <iostream>
 #include <vector>
 
@@ -16,11 +17,11 @@ using namespace std;
 //  Escribir "mov al, 1" (B0 01) activa el glow en todos los
 //  jugadores al instante; restaurar "xor al, al" lo apaga.
 //
-//  La dirección se obtiene de DOS formas:
-//   1) Búsqueda de firma en la imagen de client.dll (automática,
-//      sobrevive a parches de Valve mientras la función no cambie).
-//   2) Offset fijo (DESPLAZAMIENTO_XRAY) como respaldo para el
-//      build 14173.
+//  La dirección se obtiene de TRES formas:
+//   1) Acceso al flag + salto relativo (cmp [rax+58],0; je) en la
+//      imagen de client.dll; no depende del epílogo.
+//   2) Búsqueda del epílogo del X-Ray como respaldo.
+//   3) Offset fijo (DESPLAZAMIENTO_XRAY) como último recurso.
 //
 //  Medidas de discreción:
 //   - Al salir (Ctrl+C / cierre) se restauran los bytes originales.
@@ -48,28 +49,154 @@ static BOOL WINAPI RestaurarBytesAlSalir(DWORD tipoDeEvento)
     return FALSE;
 }
 
-// Busca la firma del X-Ray en la imagen completa de client.dll.
-// Devuelve el offset dentro del módulo, o -1 si no la encuentra.
-static intptr_t BuscarXrayPorFirma(ProcesoExterno& juego, uintptr_t baseDelModulo, SIZE_T tamanoDelModulo)
+// Devuelve true si en 'offset' empieza el epílogo del X-Ray.
+static bool CoincideEpilogoXray(const BYTE* imagen, SIZE_T tamano, intptr_t offset)
+{
+    if (offset < 0 || static_cast<SIZE_T>(offset) + TAMANO_DE_LA_FIRMA > tamano)
+        return false;
+
+    return memcmp(imagen + offset, FIRMA_XRAY, TAMANO_DE_LA_FIRMA) == 0;
+}
+
+// Etapa 1: busca el acceso al flag (cmp [rax+58], 0; je rel32) y
+// sigue el salto relativo hasta el "xor al, al" objetivo.
+// Devuelve el offset del objetivo, o -1 si no hay un candidato claro.
+static intptr_t BuscarXrayPorAcceso(const BYTE* imagen, SIZE_T tamano)
+{
+    const BuscadorDeFirmas buscador(FIRMA_ACCESO_XRAY, TAMANO_FIRMA_ACCESO, MASCARA_ACCESO_XRAY);
+    if (!buscador.EsFirmaValida())
+        return -1;
+
+    vector<intptr_t> candidatos;
+    SIZE_T desde = 0;
+
+    while (desde + TAMANO_FIRMA_ACCESO <= tamano)
+    {
+        const intptr_t relativo = buscador.BuscarEn(imagen + desde, tamano - desde);
+        if (relativo < 0)
+            break;
+
+        const SIZE_T posicion = desde + static_cast<SIZE_T>(relativo);
+
+        // El rel32 está a 6 bytes del inicio del patrón (después del cmp de 4
+        // bytes y del 0F 84). La instrucción siguiente al je está a 10 bytes.
+        int32_t desplazamiento = 0;
+        memcpy(&desplazamiento, imagen + posicion + 6, sizeof(desplazamiento));
+
+        const intptr_t objetivo = static_cast<intptr_t>(posicion) + 10 + desplazamiento;
+
+        if (objetivo > static_cast<intptr_t>(posicion) &&
+            static_cast<SIZE_T>(objetivo) + 2 <= tamano &&
+            (imagen[objetivo] == 0x32 || imagen[objetivo] == 0x30) &&
+            imagen[objetivo + 1] == 0xC0)
+        {
+            candidatos.push_back(objetivo);
+        }
+
+        desde = posicion + 1;
+    }
+
+    if (candidatos.size() == 1)
+        return candidatos[0];
+
+    // Si hay varios accesos, el epílogo desambigua.
+    if (candidatos.size() > 1)
+    {
+        intptr_t elegido = -1;
+        int coincidencias = 0;
+
+        for (const intptr_t candidato : candidatos)
+        {
+            if (CoincideEpilogoXray(imagen, tamano, candidato))
+            {
+                elegido = candidato;
+                coincidencias++;
+            }
+        }
+
+        if (coincidencias == 1)
+            return elegido;
+    }
+
+    return -1;
+}
+
+// Etapa 2: busca directamente el epílogo del X-Ray.
+// Solo devuelve un resultado si la coincidencia es única.
+static intptr_t BuscarXrayPorEpilogo(const BYTE* imagen, SIZE_T tamano)
+{
+    const BuscadorDeFirmas buscador(FIRMA_XRAY, TAMANO_DE_LA_FIRMA, MASCARA_FIRMA_XRAY);
+    if (!buscador.EsFirmaValida())
+        return -1;
+
+    intptr_t encontrado = -1;
+    int coincidencias = 0;
+    SIZE_T desde = 0;
+
+    while (desde + TAMANO_DE_LA_FIRMA <= tamano)
+    {
+        const intptr_t relativo = buscador.BuscarEn(imagen + desde, tamano - desde);
+        if (relativo < 0)
+            break;
+
+        const SIZE_T posicion = desde + static_cast<SIZE_T>(relativo);
+        encontrado = static_cast<intptr_t>(posicion);
+        coincidencias++;
+        desde = posicion + 1;
+    }
+
+    return coincidencias == 1 ? encontrado : -1;
+}
+
+// Lee la imagen del módulo y aplica las etapas en orden.
+// 'metodo' recibe el nombre de la etapa que encontró la dirección.
+static intptr_t BuscarXray(ProcesoExterno& juego, uintptr_t baseDelModulo, SIZE_T tamanoDelModulo,
+                           const char** metodo)
 {
     vector<BYTE> imagenDelModulo(tamanoDelModulo);
     if (!juego.LeerMemoria(baseDelModulo, imagenDelModulo.data(), imagenDelModulo.size()))
         return -1;
 
-    const BuscadorDeFirmas buscador(FIRMA_XRAY, TAMANO_DE_LA_FIRMA, MASCARA_FIRMA_XRAY);
-    if (!buscador.EsFirmaValida())
-        return -1;
+    const intptr_t porAcceso  = BuscarXrayPorAcceso(imagenDelModulo.data(), imagenDelModulo.size());
+    const intptr_t porEpilogo = BuscarXrayPorEpilogo(imagenDelModulo.data(), imagenDelModulo.size());
 
-    return buscador.BuscarEn(imagenDelModulo.data(), imagenDelModulo.size());
+    // Si ambos métodos coinciden, es la respuesta con más confianza.
+    if (porAcceso != -1 && porEpilogo != -1)
+    {
+        if (porAcceso == porEpilogo)
+        {
+            *metodo = "acceso + epílogo (coinciden)";
+            return porAcceso;
+        }
+
+        // Si no coinciden, el epílogo (22 bytes) es más específico.
+        *metodo = "epílogo (el acceso no coincide)";
+        return porEpilogo;
+    }
+
+    if (porAcceso != -1)
+    {
+        *metodo = "acceso (cmp+je)";
+        return porAcceso;
+    }
+
+    if (porEpilogo != -1)
+    {
+        *metodo = "epílogo";
+        return porEpilogo;
+    }
+
+    *metodo = nullptr;
+    return -1;
 }
 
-// Verifica que en la dirección haya el "xor al, al" esperado.
+// Verifica que en la dirección haya el "xor al, al" esperado (32 C0 o 30 C0).
 static bool LaDireccionContieneElXray(ProcesoExterno& juego, uintptr_t direccion)
 {
-    unsigned char byteActual = 0;
-    if (!juego.LeerMemoria(direccion, &byteActual, sizeof(byteActual)))
+    unsigned char bytes[2] = {};
+    if (!juego.LeerMemoria(direccion, bytes, sizeof(bytes)))
         return false;
-    return byteActual == 0x32; // primer byte de "xor al, al"
+    return (bytes[0] == 0x32 || bytes[0] == 0x30) && bytes[1] == 0xC0;
 }
 
 int main()
@@ -109,14 +236,16 @@ int main()
     cout << "[OK] client.dll: 0x" << hex << baseDelModulo << dec
          << " (" << modulo.tamano << " bytes)" << endl;
 
-    // 3) Determinar la dirección del X-Ray: primero por firma, luego fallback.
+    // 3) Determinar la dirección del X-Ray: acceso+salto, epílogo y fallback.
     direccionDelXray = baseDelModulo + DESPLAZAMIENTO_XRAY;
 
-    const intptr_t desplazamientoPorFirma = BuscarXrayPorFirma(juego, baseDelModulo, modulo.tamano);
-    if (desplazamientoPorFirma != -1)
+    const char* metodo = nullptr;
+    const intptr_t desplazamientoEncontrado = BuscarXray(juego, baseDelModulo, modulo.tamano, &metodo);
+    if (desplazamientoEncontrado != -1)
     {
-        direccionDelXray = baseDelModulo + static_cast<uintptr_t>(desplazamientoPorFirma);
-        cout << "[OK] X-Ray por firma: client.dll + 0x" << hex << desplazamientoPorFirma << dec << endl;
+        direccionDelXray = baseDelModulo + static_cast<uintptr_t>(desplazamientoEncontrado);
+        cout << "[OK] X-Ray por " << metodo << ": client.dll + 0x"
+             << hex << desplazamientoEncontrado << dec << endl;
     }
     else
     {
@@ -127,7 +256,7 @@ int main()
     // 4) Verificar la dirección antes de usarla.
     if (!LaDireccionContieneElXray(juego, direccionDelXray))
     {
-        cerr << "[ERROR] La dirección no contiene el patrón esperado (0x32). "
+        cerr << "[ERROR] La dirección no contiene el patrón esperado (32 C0 / 30 C0). "
                 "Actualizá la firma o el offset en config.h." << endl;
         return 1;
     }

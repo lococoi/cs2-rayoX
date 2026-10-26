@@ -16,30 +16,41 @@ En `client.dll` hay una función que controla el X-Ray del juego. En una direcci
 El programa:
 1. Espera a que `cs2.exe` esté abierto.
 2. Carga `client.dll`.
-3. **Encuentra la dirección del X-Ray automáticamente** buscando una firma de bytes en la imagen del módulo (con comodines `?` para los bytes que varían entre builds).
+3. **Encuentra la dirección del X-Ray automáticamente** combinando dos métodos:
+   - Busca el acceso al flag al inicio de la función (`cmp [rax+58],0; je rel32`) y **sigue el salto relativo** hasta el `xor al, al` objetivo. No depende de los bytes exactos del epílogo.
+   - Busca el **epílogo** del X-Ray (22 bytes) como ancla específica.
+   - Si ambos coinciden, usa esa dirección; si solo uno aparece, usa el disponible.
 4. Con **F1** alterna entre `B0 01` (activado) y `32 C0` (desactivado).
 
 ## Detección automática (sobrevive a parches de Valve)
 
-La firma se define en [`config.h`](config.h:37):
+Las firmas se definen en [`config.h`](config.h:56):
 
 ```
-32 C0                          ; xor al, al  ← el objetivo
-4C 8B A4 24 C8 00 00 00        ; mov r12, [rsp+0xC8]
-48 8B B4 24 C0 00 00 00        ; mov rsi, [rsp+0xC0]
-48 8B 9C 24 D0 00 00 00        ; mov rbx, [rsp+0xD0]
+83 78 58 00                 ; cmp dword ptr [rax+58], 0
+0F 84 ?? ?? ?? ??           ; je rel32  → destino = X-Ray
 ```
 
-- Si la función mantiene esa forma en un build futuro, el programa la encuentra solo (**cero mantenimiento**).
-- Si Valve cambia la función, el programa avisa `Firma no encontrada` y usa el **offset fijo** `DESPLAZAMIENTO_XRAY` (0xC12629, Build 14173) como respaldo.
+El finder lee el `rel32`, lo suma a la dirección siguiente al `je` y valida que el destino empiece con `xor al, al` (`32 C0`). Si el acceso no es concluyente, usa el epílogo:
+
+```
+32 C0                       ; xor al, al  ← el objetivo
+4C 8D 9C 24 90 00 00 00     ; lea r11, [rsp+90]
+49 8B 5B 30                 ; mov rbx, [r11+30]
+49 8B 73 38                 ; mov rsi, [r11+38]
+49 8B 7B 40                 ; mov rdi, [r11+40]
+```
+
+- Si la función mantiene el acceso o el epílogo, el programa la encuentra solo.
+- Si nada coincide, avisa `Firma no encontrada` y usa el **offset fijo** `DESPLAZAMIENTO_XRAY` (0xC7EC66, build actual) como último recurso.
 
 ### Redescubrir la firma con Cheat Engine (cuando Valve actualice)
 
 1. En la consola de CS2: `spec_show_xray 1`.
 2. En Cheat Engine: escanear el valor, cambiarlo (ej. a 1234), "next scan" → queda una dirección.
-3. Click derecho → *Find out what accesses this address* (F5) → aparece `cmp dword ptr [rax], 00` en `client.dll+C12068`.
-4. En el diagrama, el `xor al, al` al que confluyen las flechas es `client.dll+C12629`.
-5. Actualizar `FIRMA_XRAY`/`MASCARA_FIRMA_XRAY` (o `DESPLAZAMIENTO_XRAY`) en [`config.h`](config.h).
+3. Click derecho → *Find out what accesses this address* (F5) → aparece el bloque que empieza con `cmp dword ptr [rax+58], 00` y sigue con `je client.dll+C7EC66` (build actual).
+4. En el diagrama, seguir el `je` hasta el `xor al, al` al que confluyen las flechas: ese es el objetivo (`client.dll+C7EC66` en el build actual).
+5. Actualizar `DESPLAZAMIENTO_XRAY` y, si cambió la forma, `FIRMA_ACCESO_XRAY` o `FIRMA_XRAY` en [`config.h`](config.h).
 
 ## Requisitos
 
